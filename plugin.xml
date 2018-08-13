@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='utf-8'?>
+<plugin xmlns:android="http://schemas.android.com/apk/res/android" id="com.ttebd.a8Printer"
+    version="1.0.0" xmlns="http://apache.org/cordova/ns/plugins/1.0">
+    <name>A8Printer</name>
+    <js-module name="A8Printer" src="www/A8Printer.js">
+        <clobbers target="cordova.plugins.A8Printer" />
+    </js-module>
+    <platform name="android">
+        <config-file parent="/*" target="res/xml/config.xml">
+            <feature name="A8Printer">
+                <param name="android-package" value="com.ttebd.a8Printer.A8Printer" />
+            </feature>
+        </config-file>
+        <config-file parent="/*" target="AndroidManifest.xml"></config-file>
+        <source-file src="src/android/A8Printer.java" target-dir="src/com/ttebd/a8Printer" />
+        <source-file src="src/android/DeviceBase.java" target-dir="src/com/ttebd/a8Printer" />
+        <source-file src="src/android/PrinterMain.java" target-dir="src/com/ttebd/a8Printer" />
+
+        <source-file src="src/android/libs/armeabi/libeptand_jni.so" target-dir="app/libs/armeabi" />
+        <source-file src="src/android/libs/armeabi-v7a/libeptand_jni.so" target-dir="app/libs/armeabi-v7a" />
+        <source-file src="src/android/libs/arm64-v8a/libeptand_jni.so" target-dir="app/libs/arm64-v8a" />
+
+        <lib-file arch="device" src="src/android/libs/android-logging-log4j-1.0.3.jar" />
+        <lib-file arch="device" src="src/android/libs/eptapilibrary.jar" />
+        <lib-file arch="device" src="src/android/libs/log4j-1.2.17.jar" />
+        <lib-file arch="device" src="src/android/libs/pinpad.jar" />
+    </platform>
+</plugin>
