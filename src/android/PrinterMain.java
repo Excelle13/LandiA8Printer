@@ -4,11 +4,11 @@ import android.content.Context;
 import android.util.Log;
 
 import com.landicorp.android.eptapi.device.Beeper;
-import com.landicorp.android.eptapi.device.OnlySupportProgressException;
 import com.landicorp.android.eptapi.device.Printer;
-import com.landicorp.android.eptapi.device.Printer.Alignment;
 import com.landicorp.android.eptapi.device.Printer.Format;
 import com.landicorp.android.eptapi.exception.RequestException;
+import com.landicorp.android.eptapi.device.Printer.Alignment;
+
 import com.landicorp.android.eptapi.utils.QrCode;
 
 import org.apache.cordova.CallbackContext;
@@ -17,17 +17,12 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.InputStream;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import static com.landicorp.android.eptapi.device.Printer.Format.HZ_DOT16x16;
 import static com.landicorp.android.eptapi.device.Printer.Format.HZ_DOT24x24;
 import static com.landicorp.android.eptapi.utils.QrCode.ECLEVEL_Q;
-
-import static com.landicorp.android.eptapi.utils.QrCode.ECLEVEL_Q;
-
 
 public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
 
@@ -35,6 +30,7 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
     private Printer.Progress progress;
     private Printer printer = Printer.getInstance();
     private List<Printer.Step> stepList;
+    private Format format;
 
     // init stepList
     public void init() {
@@ -42,18 +38,22 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
     }
 
     // getPrinterStatus
-    public int getPrinterStatus() {
+    public int getPrinterStatus(CallbackContext callbackContext) throws RequestException {
         try {
+            System.out.println(printer.getErrorDescription(Printer.getInstance().getStatus()));
+            String errMessage = printer.getErrorDescription(Printer.getInstance().getStatus());
+//      callbackContext.error(errMessage);
             return Printer.getInstance().getStatus();
         } catch (RequestException e) {
-            e.printStackTrace();
+            // todo
+//      e.printStackTrace();
         }
         // 返回自定义错误码，表示抛出异常
         return FAIL;
     }
 
     // 队列打印
-    public void startPrinting(Context context, CallbackContext callbackContext) {
+    public void startingPrint(Context context, CallbackContext callbackContext) throws Exception {
 
         if (stepList == null) {
             return;
@@ -68,12 +68,12 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
             @Override
             public void onFinish(int i) {
                 stepList.clear();
-                if (i == Printer.ERROR_NONE) {
-                    Log.e("打印", "successful");
-                } else {
-                    Log.e("打印", "failed");
-                }
-//        printFinish(i, CallbackContext);
+//        if (i == Printer.ERROR_NONE) {
+//          Log.e("打印", "successful");
+//        } else {
+//          Log.e("打印", "failed");
+//        }
+                printFinish(i, callbackContext);
             }
 
             @Override
@@ -83,8 +83,12 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
             }
         };
 
-        printImg("mixc.bmp", 0, context, callbackContext);
-        printQRcode("hello", 0, 300);
+//      printImg("mixc.bmp", 0, context, callbackContext);
+//      printQRcode("hello", 0, 300);
+        Format format = new Format();
+        printiCutLine("", 5);
+        printiSplitLine("", 0);
+
 //    printTxt();
 
         // 将所有打印队列放置到进程中
@@ -94,25 +98,128 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
 
         try {
             // 开始打印
+            printer.setAutoTrunc(false);
             Beeper.startBeep(50);
             progress.start();
         } catch (RequestException e) {
             Log.e("printer", "printer failed");
             unbindDeviceService();
+            // todo
             e.printStackTrace();
         }
 
 
     }
 
-    // Print barcode
-    public boolean printBarcode() {
+    // print stepList ready
+    public void generatePrintStep(JSONArray params, Context context, CallbackContext callbackContext) {
+
+        printImg("", 0, context, callbackContext);  // print picture
+        printiSplitLine("", 0);                     // print splitLine
+        printiCutLine("", 0);                       // print cutLine
+        printBarcode("");                                       // print barCode
+        printQRcode("", 0, 300);          // print QRcode
+        printTitle("", "center");                  // print single txt
+
+//    printContent(format,)
+
+    }
+
+    // Print content
+
+    /**
+     * 1-可设置打印列
+     * 2-可设置每一行的打印样式
+     * 3-
+     */
+    public boolean printContent(JSONObject params, JSONObject spacing, JSONObject fontFormat) {
+        if (stepList == null) {
+            return false;
+        }
+
+        stepList.add(new Printer.Step() {
+            @Override
+            public void doPrint(Printer printer) throws Exception {
+
+                JSONObject hzFormat = fontFormat.getJSONObject("hzFormat");
+                JSONObject ascFormat = fontFormat.getJSONObject("ascFormat");
+
+                HzFormat(hzFormat.optString("hzScale"), hzFormat.optString("hzSize"));
+                AscFormat(ascFormat.optString("ascScale"), ascFormat.optString("ascSize"));
+// 两列
+                if (params.length() == 2) {
+                    printer.printText(String.format("" +
+                                    "%" + spacing.optString("spacing1") + "s" +
+                                    "%" + spacing.optString("spacing2") + "s",
+                            params.optString("param1"),
+                            params.optString("param2")));
+                }
+// 三列
+                if (params.length() == 3) {
+                    printer.printText(String.format("" +
+                                    "%" + spacing.optString("spacing1") + "s" +
+                                    "%" + spacing.optString("spacing2") + "s" +
+                                    "%" + spacing.optString("spacing3") + "s",
+                            params.optString("param1"),
+                            params.optString("param2"),
+                            params.optString("param3")));
+                }
+
+                generalFormat();
+            }
+        });
+
+
+        return true;
+
+    }
+
+    // Print title
+    public boolean printTitle(String text, String alignment) {
         if (stepList == null) {
             return false;
         }
         stepList.add(new Printer.Step() {
             @Override
             public void doPrint(Printer printer) throws Exception {
+
+                // 设置打印格式
+                format.setAscScale(Format.AscScale.SC1x1);
+                format.setAscSize(Format.AscSize.DOT24x12);
+                format.setHzScale(Format.HZ_SC2x1);
+                format.setHzSize(Format.HZ_DOT24x16);
+                printer.setFormat(format);
+
+                printer.setAutoTrunc(false);
+                // Printing center
+                if (alignment == "center") {
+                    printer.printText(Printer.Alignment.CENTER, text + "\n");
+                }
+                // Printing left
+                if (alignment == "left") {
+                    printer.printText(Printer.Alignment.LEFT, text + "\n");
+                }
+                // Printing right
+                if (alignment == "right") {
+                    printer.printText(Printer.Alignment.RIGHT, text + "\n");
+                }
+
+                generalFormat();
+            }
+        });
+        return true;
+    }
+
+    // Print barcode
+    public boolean printBarcode(String barcode) {
+        if (stepList == null) {
+            return false;
+        }
+        stepList.add(new Printer.Step() {
+            @Override
+            public void doPrint(Printer printer) throws Exception {
+                printer.printBarCode(Alignment.CENTER, barcode);
+                printer.printText(Alignment.CENTER, barcode + "\n");
 
             }
         });
@@ -136,39 +243,6 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
         return true;
     }
 
-    // Print txt
-    public boolean printTitle(Format format, String text, String aligment) {
-        if (stepList == null) {
-            return false;
-        }
-        stepList.add(new Printer.Step() {
-            @Override
-            public void doPrint(Printer printer) throws Exception {
-
-                // 设置打印格式
-                format.setAscScale(Format.AscScale.SC1x1);
-                format.setAscSize(Format.AscSize.DOT24x12);
-                format.setHzScale(Format.HZ_SC2x1);
-                format.setHzSize(Format.HZ_DOT24x16);
-                printer.setFormat(format);
-
-                printer.setAutoTrunc(false);
-                // Printing center
-                if (aligment == "center") {
-                    printer.printText(Printer.Alignment.CENTER, text + "\n");
-                }
-                // Printing left
-                if (aligment == "left") {
-                    printer.printText(Printer.Alignment.LEFT, text + "\n");
-                }
-                // Printing right
-                if (aligment == "right") {
-                    printer.printText(Printer.Alignment.RIGHT, text + "\n");
-                }
-            }
-        });
-        return true;
-    }
 
     // Print img
     public boolean printImg(String imgSrc, int offset, Context context, CallbackContext callbackContext) {
@@ -192,14 +266,17 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
     }
 
     // Print cutLine
-    public boolean printiCutLine() {
+    public boolean printiCutLine(String style, int feedLine) {
         if (stepList == null) {
             return false;
         }
         stepList.add(new Printer.Step() {
             @Override
             public void doPrint(Printer printer) throws Exception {
-
+                samllFormat();
+                printer.printText(Alignment.CENTER, "- - - - - - x - - - - - - - - - - - x - - - - - \n");
+                printer.feedLine(feedLine);
+                generalFormat();
             }
         });
         return true;
@@ -207,26 +284,32 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
 
 
     // Print splitLine
-    public boolean printiSplitLine() {
+    public boolean printiSplitLine(String style, int feedLine) {
         if (stepList == null) {
             return false;
         }
         stepList.add(new Printer.Step() {
             @Override
             public void doPrint(Printer printer) throws Exception {
-
+                format.setAscScale(Format.ASC_SC1x2);
+                format.setAscSize(Format.ASC_DOT16x8);
+                format.setHzScale(Format.HZ_SC1x2);
+                format.setHzSize(HZ_DOT16x16);
+                try {
+                    printer.setFormat(format);
+                    printer.printText(Alignment.CENTER, "- - - - - - - - - - - - - - - - - - - - - - - - \n");
+                    generalFormat();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         });
         return true;
     }
 
 
-    /**
-     * 打印成功调用方法
-     *
-     * @param i
-     * @param callbackContext
-     */
+    // successful printing method
+
     public void printFinish(int i, CallbackContext callbackContext) {
         if (i == com.landicorp.android.eptapi.device.Printer.ERROR_NONE) {
 //      logUtil.info("printer", "printer success");
@@ -251,6 +334,7 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
                 errMessageObj.put("message", errMessage);
                 callbackContext.error(errMessageObj);
             } catch (JSONException e) {
+                // TODO
                 e.printStackTrace();
             } finally {
                 unbindDeviceService();
@@ -258,8 +342,36 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
         }
     }
 
-    // 汉字格式化
-    public void HzFormat(String hzScale, String hzSize, Format format) throws Exception {
+    // 正常字体格式化
+    public void generalFormat() {
+        format.setAscScale(Format.ASC_SC1x1);
+        format.setAscSize(Format.ASC_DOT24x12);
+        format.setHzScale(Format.HZ_SC1x1);
+        format.setHzSize(HZ_DOT24x24);
+        try {
+            printer.setFormat(format);
+        } catch (Exception e) {
+            // TODO
+            e.printStackTrace();
+        }
+    }
+
+
+    // 处理字体格式-小字体1*2
+    public void samllFormat() {
+        format.setAscScale(Format.ASC_SC1x2);
+        format.setAscSize(Format.ASC_DOT16x8);
+        format.setHzScale(Format.HZ_SC1x2);
+        format.setHzSize(HZ_DOT16x16);
+        try {
+            printer.setFormat(format);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // chinese format
+    public void HzFormat(String hzScale, String hzSize) throws Exception {
         switch (hzScale) {
             case "SC1x1":
                 format.setHzScale(Format.HzScale.SC1x1);
@@ -314,8 +426,8 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
 
     }
 
-    // ASC 格式化
-    public void AscFormat(String ascScale, String ascSize, Format format) throws Exception {
+    // ASC format
+    public void AscFormat(String ascScale, String ascSize) throws Exception {
         switch (ascScale) {
             case "SC1x1":
                 format.setAscScale(Format.AscScale.SC1x1);
