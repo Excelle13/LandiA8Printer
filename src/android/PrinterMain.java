@@ -36,13 +36,16 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
     }
 
     // getPrinterStatus
-    public int getPrinterStatus(CallbackContext callbackContext) throws RequestException {
+    public int getPrinterStatus() {
         try {
-            System.out.println(printer.getErrorDescription(Printer.getInstance().getStatus()));
-            String errMessage = printer.getErrorDescription(Printer.getInstance().getStatus());
+//      System.out.println(printer.getErrorDescription(Printer.getInstance().getStatus()));
+//      String errMessage = printer.getErrorDescription(Printer.getInstance().getStatus());
 //      callbackContext.error(errMessage);
+
             return Printer.getInstance().getStatus();
         } catch (RequestException e) {
+//      callbackContext.error("getPrinterStatus--" + e.getMessage());
+
             // todo
 //      e.printStackTrace();
         }
@@ -100,15 +103,21 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
             progress.addStep(step);
         }
 
-        try {
-            // 开始打印
-            Beeper.startBeep(50);
-            progress.start();
-        } catch (RequestException e) {
-            Log.e("printer", "printer failed");
-            unbindDeviceService();
-            // todo
-            e.printStackTrace();
+
+        if (getPrinterStatus() == 0) {
+            try {
+                // 开始打印
+                Beeper.startBeep(50);
+                progress.start();
+            } catch (RequestException e) {
+                Log.e("printer", "printer failed");
+                unbindDeviceService();
+                // todo
+                e.printStackTrace();
+            }
+        } else {
+            System.err.println("打印狀態不能與0----------");
+            printFinish(getPrinterStatus(), callbackContext);
         }
 
 
@@ -151,6 +160,8 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
 
                 String titleTxt = "";
                 String titleAlign = "";
+                JSONObject spaceXY = null;
+                JSONObject titleFontFormat = null;
 
                 JSONObject titleObj = obj.getJSONObject(key);
 
@@ -164,8 +175,15 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
                     if (titleKey.indexOf("titleAlign") == 0) {
                         titleAlign = titleObj.optString(titleKey);
                     }
+                    if (titleKey.indexOf("spaceXY") == 0) {
+                        spaceXY = titleObj.getJSONObject(titleKey);
+                    }
+
+                    if (titleKey.indexOf("fontFormat") == 0) {
+                        titleFontFormat = titleObj.getJSONObject(titleKey);
+                    }
                 }
-                printTitle(titleTxt, titleAlign, format);                  // print title
+                printTitle(titleTxt, titleAlign, titleFontFormat, spaceXY, format);                  // print title
 
             }
 
@@ -184,6 +202,7 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
                 JSONObject contentParams = null;
                 JSONObject contentSpacing = null;
                 JSONObject contentFontFormat = null;
+                JSONObject spaceXY = null;
 
 
                 JSONArray contentArray = obj.getJSONArray(key);
@@ -198,14 +217,17 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
 
                         if (contentKey.indexOf("params") == 0) {
                             contentParams = contents.getJSONObject(contentKey);
-
                         }
+
                         if (contentKey.indexOf("spacing") == 0) {
                             contentSpacing = contents.getJSONObject(contentKey);
-
                         }
+
                         if (contentKey.indexOf("fontFormat") == 0) {
                             contentFontFormat = contents.getJSONObject(contentKey);
+                        }
+                        if (contentKey.indexOf("spaceXY") == 0) {
+                            spaceXY = contents.getJSONObject(contentKey);
 
                         }
 
@@ -214,10 +236,10 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
                 }
 
 
-                System.out.println(contentArray);
+//        System.out.println(contentArray);
 
 //        JSONArray contentArray1= contentArray.getJSONArray(obj);
-                printContent(contentParams, contentSpacing, contentFontFormat, format);
+                printContent(contentParams, contentSpacing, spaceXY, contentFontFormat, format);
             }
 
             //barCode
@@ -269,7 +291,7 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
      * 2-可设置每一行的打印样式
      * 3-
      */
-    public boolean printContent(JSONObject params, JSONObject spacing, JSONObject fontFormat, Format format) {
+    public boolean printContent(JSONObject params, JSONObject spacing, JSONObject spaceXY, JSONObject fontFormat, Format format) {
         if (stepList == null) {
             return false;
         }
@@ -279,7 +301,9 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
             public void doPrint(Printer printer) throws Exception {
                 printer.setAutoTrunc(false);
 
-
+                // 设置字行间距
+                format.setXSpace(spaceXY.optInt("spaceX"));
+                format.setYSpace(spaceXY.optInt("spaceY"));
 
                 JSONObject hzFormat = fontFormat.getJSONObject("hzFormat");
                 JSONObject ascFormat = fontFormat.getJSONObject("ascFormat");
@@ -292,7 +316,7 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
                                     "%" + spacing.optString("spacing1") + "s" +
                                     "%" + spacing.optString("spacing2") + "s",
                             params.optString("param1"),
-                            params.optString("param2"))+"\n");
+                            params.optString("param2")) + "\n");
                 }
 // 三列
                 if (params.length() == 3) {
@@ -302,7 +326,7 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
                                     "%" + spacing.optString("spacing3") + "s",
                             params.optString("param1"),
                             params.optString("param2"),
-                            params.optString("param3"))+"\n");
+                            params.optString("param3")) + "\n");
                 }
 
                 generalFormat(format, printer);
@@ -315,7 +339,7 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
     }
 
     // Print title
-    public boolean printTitle(String text, String alignment, Format format) {
+    public boolean printTitle(String text, String alignment, JSONObject fontFormat, JSONObject spaceXY, Format format) {
         if (stepList == null) {
             return false;
         }
@@ -324,6 +348,9 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
             public void doPrint(Printer printer) throws Exception {
 
                 printer.setAutoTrunc(false);
+//        format.setXSpace();
+//        format.setYSpace();
+
                 // 设置打印格式
 //        format.setAscScale(Format.AscScale.SC1x1);
 //        format.setAscSize(Format.AscSize.DOT24x12);
@@ -331,6 +358,14 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
 //        format.setHzSize(Format.HZ_DOT24x16);
 //        printer.setFormat(format);
 
+                // 设置字行间距
+                format.setXSpace(spaceXY.optInt("spaceX"));
+                format.setYSpace(spaceXY.optInt("spaceY"));
+                JSONObject hzFormat = fontFormat.getJSONObject("hzFormat");
+                JSONObject ascFormat = fontFormat.getJSONObject("ascFormat");
+
+                HzFormat(hzFormat.optString("hzScale"), hzFormat.optString("hzSize"), format, printer);
+                AscFormat(ascFormat.optString("ascScale"), ascFormat.optString("ascSize"), format, printer);
 
                 // Printing center
                 if (alignment.equals("center")) {
@@ -449,7 +484,6 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
 
 
     // successful printing method
-
     public void printFinish(int i, CallbackContext callbackContext) {
         if (i == com.landicorp.android.eptapi.device.Printer.ERROR_NONE) {
 //      logUtil.info("printer", "printer success");
@@ -484,6 +518,8 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
 
     // 正常字体格式化
     public void generalFormat(Format format, Printer printer) {
+        format.setYSpace(0);
+        format.setXSpace(0);
         format.setAscScale(Format.ASC_SC1x1);
         format.setAscSize(Format.ASC_DOT24x12);
         format.setHzScale(Format.HZ_SC1x1);
