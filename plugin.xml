@@ -20,9 +20,7 @@
         <source-file src="src/android/libs/armeabi-v7a/libeptand_jni.so" target-dir="app/libs/armeabi-v7a" />
         <source-file src="src/android/libs/arm64-v8a/libeptand_jni.so" target-dir="app/libs/arm64-v8a" />
 
-        <lib-file arch="device" src="src/android/libs/android-logging-log4j-1.0.3.jar" />
         <lib-file arch="device" src="src/android/libs/eptapilibrary.jar" />
-        <lib-file arch="device" src="src/android/libs/log4j-1.2.17.jar" />
         <lib-file arch="device" src="src/android/libs/pinpad.jar" />
     </platform>
 </plugin>

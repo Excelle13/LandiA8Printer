@@ -52,7 +52,7 @@ public class A8Printer extends CordovaPlugin {
                                 break;
 
                             // main print method
-                            case "print":
+                            case "printMain":
                                 bindDeviceService(activity.getApplicationContext());
                                 printerMain.init();
                                 printerMain.startingPrint(args, activity.getApplicationContext(), callbackContext);

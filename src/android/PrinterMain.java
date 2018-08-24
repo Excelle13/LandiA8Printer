@@ -194,7 +194,7 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
 
             // If there are cut lines in the parameter, increase the steps of print segmentation.
             if (key.indexOf("cutLine") == 0) {
-                printiCutLine("", 0, format);                       // print cutLine
+                printiCutLine("", 3, format);                       // print cutLine
             }
 
             //content
@@ -230,8 +230,8 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
                             spaceXY = contents.getJSONObject(contentKey);
 
                         }
-
                     }
+                    printContent(contentParams, contentSpacing, spaceXY, contentFontFormat, format);
 
                 }
 
@@ -239,31 +239,30 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
 //        System.out.println(contentArray);
 
 //        JSONArray contentArray1= contentArray.getJSONArray(obj);
-                printContent(contentParams, contentSpacing, spaceXY, contentFontFormat, format);
             }
 
             //barCode
             if (key.indexOf("barCode") == 0) {
                 String barCodeObj = obj.optString(key);
-                printBarcode(barCodeObj);                                       // print barCode
+                printBarcode(barCodeObj, format);                                       // print barCode
             }
 
             // qrcode
             if (key.indexOf("qrCode") == 0) {
                 JSONObject qrCodeObj = obj.getJSONObject(key);
                 System.out.println("qrcode" + qrCodeObj);
-                String qrcode = "";
-                int qrCodeOffset = 0;
-                int qrCodeImgHeight = 300;
+                String qrCode = "";
+                int qrCodeOffset = 55;
+                int qrCodeImgHeight = 350;
 
-                Iterator qrCodeiterator = obj.keys();
+                Iterator qrCodeiterator = qrCodeObj.keys();
 
                 while (qrCodeiterator.hasNext()) {
 
                     String qrCodeKey = (String) qrCodeiterator.next();
 
-                    if (qrCodeKey.indexOf("qrcode") == 0) {
-                        qrcode = qrCodeObj.optString(qrCodeKey);
+                    if (qrCodeKey.indexOf("qrCodeValue") == 0) {
+                        qrCode = qrCodeObj.optString(qrCodeKey);
                     }
                     if (qrCodeKey.indexOf("qrCodeOffset") == 0) {
                         qrCodeOffset = qrCodeObj.optInt(qrCodeKey);
@@ -272,7 +271,7 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
                         qrCodeImgHeight = qrCodeObj.optInt(qrCodeKey);
                     }
                 }
-                printQRcode(qrcode, qrCodeOffset, qrCodeImgHeight);          // print QRcode
+                printQRcode(qrCode, qrCodeOffset, qrCodeImgHeight,format);          // print QRcode
             }
 
             //test
@@ -302,6 +301,7 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
                 printer.setAutoTrunc(false);
 
                 // 设置字行间距
+                System.out.println(spaceXY.optInt("spaceX"));
                 format.setXSpace(spaceXY.optInt("spaceX"));
                 format.setYSpace(spaceXY.optInt("spaceY"));
 
@@ -310,7 +310,36 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
 
                 HzFormat(hzFormat.optString("hzScale"), hzFormat.optString("hzSize"), format, printer);
                 AscFormat(ascFormat.optString("ascScale"), ascFormat.optString("ascSize"), format, printer);
-// 两列
+
+
+// 一列
+                if (params.length() == 1) {
+
+
+                    // Printing center
+                    if (spacing.optString("spacing1").equals("center")) {
+                        printer.printText(Printer.Alignment.CENTER,     params.optString("param1") + "\n");
+                    }
+                    // Printing left
+                    if (spacing.optString("spacing1").equals("left")) {
+                        printer.printText(Printer.Alignment.LEFT,     params.optString("param1") + "\n");
+                    }
+                    // Printing right
+                    if (spacing.optString("spacing1").equals("right")) {
+                        printer.printText(Printer.Alignment.RIGHT,     params.optString("param1") + "\n");
+                    }
+
+
+
+    /*                printer.printText(String.format("" +
+                                    "%" + spacing.optString("spacing1") + "s" +
+                                    "%" + spacing.optString("spacing2") + "s",
+                            params.optString("param1"),
+                            params.optString("param2")) + "\n");*/
+
+                }
+
+                // 两列
                 if (params.length() == 2) {
                     printer.printText(String.format("" +
                                     "%" + spacing.optString("spacing1") + "s" +
@@ -320,13 +349,30 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
                 }
 // 三列
                 if (params.length() == 3) {
-                    printer.printText(String.format("" +
-                                    "%" + spacing.optString("spacing1") + "s" +
-                                    "%" + spacing.optString("spacing2") + "s" +
-                                    "%" + spacing.optString("spacing3") + "s",
-                            params.optString("param1"),
-                            params.optString("param2"),
-                            params.optString("param3")) + "\n");
+                    System.out.println("param1-----" + params.get("param1"));
+
+
+                    if (!(params.get("param1") instanceof String)) {
+                        JSONObject itemName = params.getJSONObject("param1");
+                        printer.printText(Alignment.LEFT, itemName.optString("param1") + "\n");
+                        printer.printText(String.format("" +
+                                        "%" + spacing.optString("spacing1") + "s" +
+                                        "%" + spacing.optString("spacing2") + "s" +
+                                        "%" + spacing.optString("spacing3") + "s",
+                                itemName.optString("param2"),
+                                params.optString("param2"),
+                                params.optString("param3")) + "\n");
+
+                    } else {
+                        printer.printText(String.format("" +
+                                        "%" + spacing.optString("spacing1") + "s" +
+                                        "%" + spacing.optString("spacing2") + "s" +
+                                        "%" + spacing.optString("spacing3") + "s",
+                                params.optString("param1"),
+                                params.optString("param2"),
+                                params.optString("param3")) + "\n");
+                    }
+
                 }
 
                 generalFormat(format, printer);
@@ -340,6 +386,10 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
 
     // Print title
     public boolean printTitle(String text, String alignment, JSONObject fontFormat, JSONObject spaceXY, Format format) {
+
+        if (text.length() < 1) {
+            return true;
+        }
         if (stepList == null) {
             return false;
         }
@@ -387,14 +437,19 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
     }
 
     // Print barcode
-    public boolean printBarcode(String barcode) {
+    public boolean printBarcode(String barcode,Format format) {
         if (stepList == null) {
             return false;
         }
         stepList.add(new Printer.Step() {
             @Override
             public void doPrint(Printer printer) throws Exception {
+                generalFormat(format,printer);
+
                 printer.printBarCode(Alignment.CENTER, barcode);
+                format.setXSpace(3);
+                format.setYSpace(10);
+                printer.setFormat(format);
                 printer.printText(Alignment.CENTER, barcode + "\n");
 
             }
@@ -403,7 +458,7 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
     }
 
     // Print QRcode
-    public boolean printQRcode(String qrcode, int offset, int imgHeight) {
+    public boolean printQRcode(String qrcode, int offset, int imgHeight,Format format) {
 
         if (stepList == null) {
             return false;
@@ -412,7 +467,7 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
             @Override
             public void doPrint(Printer printer) throws Exception {
                 printer.setAutoTrunc(false);
-
+                generalFormat(format, printer);
                 QrCode qrCode = new QrCode(qrcode, ECLEVEL_Q);
                 printer.printQrCode(offset, qrCode, imgHeight);
             }
@@ -535,6 +590,8 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
 
     // 处理字体格式-小字体1*2
     public void samllFormat(Format format, Printer printer) {
+        format.setXSpace(0);
+        format.setYSpace(0);
         format.setAscScale(Format.ASC_SC1x2);
         format.setAscSize(Format.ASC_DOT16x8);
         format.setHzScale(Format.HZ_SC1x2);

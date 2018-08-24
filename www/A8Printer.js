@@ -4,6 +4,6 @@ exports.coolMethod = function (arg0, success, error) {
     exec(success, error, 'A8Printer', 'coolMethod', [arg0]);
 };
 
-exports.coolMethod = function (arg0, success, error) {
-    exec(success, error, 'A8Printer', 'print', [arg0]);
+exports.printMain = function (arg0, success, error) {
+    exec(success, error, 'A8Printer', 'printMain', [arg0]);
 };
