@@ -489,7 +489,7 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
                     in = context.getResources().getAssets().open(imgSrc);
                     printer.printImage(offset, in);
                 } catch (Exception e) {
-                    callbackContext.error("打印图片异常");
+//                    callbackContext.error("打印图片异常");
                     e.printStackTrace();
                 }
             }
