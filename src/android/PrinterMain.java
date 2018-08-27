@@ -36,21 +36,34 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
     }
 
     // getPrinterStatus
-    public int getPrinterStatus() {
+    public boolean getPrinterStatus(CallbackContext callbackContext) {
         try {
-//      System.out.println(printer.getErrorDescription(Printer.getInstance().getStatus()));
-//      String errMessage = printer.getErrorDescription(Printer.getInstance().getStatus());
-//      callbackContext.error(errMessage);
 
-            return Printer.getInstance().getStatus();
+            int printStatus = Printer.getInstance().getStatus();
+//      System.out.println(printer.getErrorDescription(Printer.getInstance().getStatus()));
+//            String errMessage = Printer.getErrorDescription(printStatus);
+
+            if (printStatus == 0) {
+//                return this.printer.getStatus();
+                return true;
+
+
+            } else {
+//                callbackContext.error(errMessage);
+                printFinish(printStatus, callbackContext, printer);
+                return false;
+            }
+
         } catch (RequestException e) {
 //      callbackContext.error("getPrinterStatus--" + e.getMessage());
 
             // todo
-//      e.printStackTrace();
+            unbindDeviceService();
+            e.printStackTrace();
         }
         // 返回自定义错误码，表示抛出异常
-        return FAIL;
+
+        return false;
     }
 
     // 队列打印
@@ -73,13 +86,12 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
 //        } else {
 //          Log.e("打印", "failed");
 //        }
-                printFinish(i, callbackContext);
+                printFinish(i, callbackContext, printer);
             }
 
             @Override
             public void onCrash() {
                 System.out.println("onCrash");
-
             }
         };
 
@@ -96,6 +108,10 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
 
 
         //产生所以需要打印的步骤
+//
+//        JSONObject printParamsObj = params.getJSONObject(0);
+//
+//        int titleObj = printParamsObj.optInt("printingTimes");
         generatePrintStep(params, format, context, callbackContext);
 
         // 将所有打印队列放置到进程中
@@ -104,10 +120,10 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
         }
 
 
-        if (getPrinterStatus() == 0) {
+        if (getPrinterStatus(callbackContext)) {
             try {
                 // 开始打印
-                Beeper.startBeep(50);
+//                Beeper.startBeep(50);
                 progress.start();
             } catch (RequestException e) {
                 Log.e("printer", "printer failed");
@@ -116,8 +132,8 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
                 e.printStackTrace();
             }
         } else {
-            System.err.println("打印狀態不能與0----------");
-            printFinish(getPrinterStatus(), callbackContext);
+            System.err.println("打印状态不为0----------" + printer.getErrorDescription(Printer.getInstance().getStatus()));
+//            printFinish(getPrinterStatus(callbackContext), callbackContext, printer);
         }
 
 
@@ -271,7 +287,7 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
                         qrCodeImgHeight = qrCodeObj.optInt(qrCodeKey);
                     }
                 }
-                printQRcode(qrCode, qrCodeOffset, qrCodeImgHeight,format);          // print QRcode
+                printQRcode(qrCode, qrCodeOffset, qrCodeImgHeight, format);          // print QRcode
             }
 
             //test
@@ -318,15 +334,15 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
 
                     // Printing center
                     if (spacing.optString("spacing1").equals("center")) {
-                        printer.printText(Printer.Alignment.CENTER,     params.optString("param1") + "\n");
+                        printer.printText(Printer.Alignment.CENTER, params.optString("param1") + "\n");
                     }
                     // Printing left
                     if (spacing.optString("spacing1").equals("left")) {
-                        printer.printText(Printer.Alignment.LEFT,     params.optString("param1") + "\n");
+                        printer.printText(Printer.Alignment.LEFT, params.optString("param1") + "\n");
                     }
                     // Printing right
                     if (spacing.optString("spacing1").equals("right")) {
-                        printer.printText(Printer.Alignment.RIGHT,     params.optString("param1") + "\n");
+                        printer.printText(Printer.Alignment.RIGHT, params.optString("param1") + "\n");
                     }
 
 
@@ -338,6 +354,7 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
                             params.optString("param2")) + "\n");*/
 
                 }
+
 
                 // 两列
                 if (params.length() == 2) {
@@ -437,14 +454,14 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
     }
 
     // Print barcode
-    public boolean printBarcode(String barcode,Format format) {
+    public boolean printBarcode(String barcode, Format format) {
         if (stepList == null) {
             return false;
         }
         stepList.add(new Printer.Step() {
             @Override
             public void doPrint(Printer printer) throws Exception {
-                generalFormat(format,printer);
+                generalFormat(format, printer);
 
                 printer.printBarCode(Alignment.CENTER, barcode);
                 format.setXSpace(3);
@@ -458,7 +475,7 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
     }
 
     // Print QRcode
-    public boolean printQRcode(String qrcode, int offset, int imgHeight,Format format) {
+    public boolean printQRcode(String qrcode, int offset, int imgHeight, Format format) {
 
         if (stepList == null) {
             return false;
@@ -489,7 +506,7 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
                     in = context.getResources().getAssets().open(imgSrc);
                     printer.printImage(offset, in);
                 } catch (Exception e) {
-//                    callbackContext.error("打印图片异常");
+                    callbackContext.error("打印图片异常");
                     e.printStackTrace();
                 }
             }
@@ -539,7 +556,7 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
 
 
     // successful printing method
-    public void printFinish(int i, CallbackContext callbackContext) {
+    public void printFinish(int i, CallbackContext callbackContext, Printer printer) {
         if (i == com.landicorp.android.eptapi.device.Printer.ERROR_NONE) {
 //      logUtil.info("printer", "printer success");
             Log.e("printer", "print success");
@@ -554,7 +571,7 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
                 unbindDeviceService();
             }
         } else {
-            String errMessage = printer.getErrorDescription(i);
+            String errMessage = this.printer.getErrorDescription(i);
             Log.e("printer", "print failed：" + errMessage);
 //      logUtil.info("printer", errMessage);
             JSONObject errMessageObj = new JSONObject();
