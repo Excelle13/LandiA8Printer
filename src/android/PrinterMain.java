@@ -40,7 +40,7 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
         try {
 
             int printStatus = Printer.getInstance().getStatus();
-//      System.out.println(printer.getErrorDescription(Printer.getInstance().getStatus()));
+//            System.out.println(printer.getErrorDescription(Printer.getInstance().getStatus()));
 //            String errMessage = Printer.getErrorDescription(printStatus);
 
             if (printStatus == 0) {
@@ -108,11 +108,14 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
 
 
         //产生所以需要打印的步骤
-//
-//        JSONObject printParamsObj = params.getJSONObject(0);
-//
-//        int titleObj = printParamsObj.optInt("printingTimes");
-        generatePrintStep(params, format, context, callbackContext);
+// 打印次数获取
+        JSONObject printParamsObj = params.getJSONObject(0);
+        int printingTimes = printParamsObj.optInt("printingTimes") > 1 ? printParamsObj.optInt("printingTimes") : 1;
+        while (printingTimes > 0) {
+            generatePrintStep(params, format, context, callbackContext);
+            printingTimes -= 1;
+        }
+//        generatePrintStep(params, format, context, callbackContext);
 
         // 将所有打印队列放置到进程中
         for (Printer.Step step : stepList) {
@@ -124,7 +127,7 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
             try {
                 // 开始打印
 //                Beeper.startBeep(50);
-                progress.start();
+                progress.execute();
             } catch (RequestException e) {
                 Log.e("printer", "printer failed");
                 unbindDeviceService();
@@ -571,7 +574,7 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
                 unbindDeviceService();
             }
         } else {
-            String errMessage = this.printer.getErrorDescription(i);
+            String errMessage = printer.getErrorDescription(i);
             Log.e("printer", "print failed：" + errMessage);
 //      logUtil.info("printer", errMessage);
             JSONObject errMessageObj = new JSONObject();
