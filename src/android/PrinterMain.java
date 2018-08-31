@@ -226,33 +226,34 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
 
                 JSONArray contentArray = obj.getJSONArray(key);
 
+                printContent(contentArray, format);
+/*
+        for (int i = 0; i < contentArray.length(); i++) {
+          JSONObject contents = contentArray.getJSONObject(i);
+          Iterator contentIterator = contents.keys();
 
-                for (int i = 0; i < contentArray.length(); i++) {
-                    JSONObject contents = contentArray.getJSONObject(i);
-                    Iterator contentIterator = contents.keys();
+          while (contentIterator.hasNext()) {
+            String contentKey = (String) contentIterator.next();
 
-                    while (contentIterator.hasNext()) {
-                        String contentKey = (String) contentIterator.next();
+            if (contentKey.indexOf("params") == 0) {
+              contentParams = contents.getJSONObject(contentKey);
+            }
 
-                        if (contentKey.indexOf("params") == 0) {
-                            contentParams = contents.getJSONObject(contentKey);
-                        }
+            if (contentKey.indexOf("spacing") == 0) {
+              contentSpacing = contents.getJSONObject(contentKey);
+            }
 
-                        if (contentKey.indexOf("spacing") == 0) {
-                            contentSpacing = contents.getJSONObject(contentKey);
-                        }
+            if (contentKey.indexOf("fontFormat") == 0) {
+              contentFontFormat = contents.getJSONObject(contentKey);
+            }
+            if (contentKey.indexOf("spaceXY") == 0) {
+              spaceXY = contents.getJSONObject(contentKey);
 
-                        if (contentKey.indexOf("fontFormat") == 0) {
-                            contentFontFormat = contents.getJSONObject(contentKey);
-                        }
-                        if (contentKey.indexOf("spaceXY") == 0) {
-                            spaceXY = contents.getJSONObject(contentKey);
+            }
+          }
+//                    printContent(contentParams, contentSpacing, spaceXY, contentFontFormat, format);
 
-                        }
-                    }
-                    printContent(contentParams, contentSpacing, spaceXY, contentFontFormat, format);
-
-                }
+        }*/
 
 
 //        System.out.println(contentArray);
@@ -309,7 +310,8 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
      * 2-可设置每一行的打印样式
      * 3-
      */
-    public boolean printContent(JSONObject params, JSONObject spacing, JSONObject spaceXY, JSONObject fontFormat, Format format) {
+    public boolean printContent(JSONArray contentArray, Format format) {
+//    public boolean printContent(JSONObject params, JSONObject spacing, JSONObject spaceXY, JSONObject fontFormat, Format format) {
         if (stepList == null) {
             return false;
         }
@@ -317,36 +319,69 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
         stepList.add(new Printer.Step() {
             @Override
             public void doPrint(Printer printer) throws Exception {
+
                 printer.setAutoTrunc(false);
 
-                // 设置字行间距
-                System.out.println(spaceXY.optInt("spaceX"));
-                format.setXSpace(spaceXY.optInt("spaceX"));
-                format.setYSpace(spaceXY.optInt("spaceY"));
+                JSONObject params = null;
+                JSONObject spacing = null;
+                JSONObject fontFormat = null;
+                JSONObject spaceXY = null;
 
-                JSONObject hzFormat = fontFormat.getJSONObject("hzFormat");
-                JSONObject ascFormat = fontFormat.getJSONObject("ascFormat");
+                for (int i = 0; i < contentArray.length(); i++) {
 
-                HzFormat(hzFormat.optString("hzScale"), hzFormat.optString("hzSize"), format, printer);
-                AscFormat(ascFormat.optString("ascScale"), ascFormat.optString("ascSize"), format, printer);
+                    JSONObject contents = contentArray.getJSONObject(i);
+                    Iterator contentIterator = contents.keys();
 
+                    while (contentIterator.hasNext()) {
+                        String contentKey = (String) contentIterator.next();
+
+                        if (contentKey.indexOf("params") == 0) {
+                            params = contents.getJSONObject(contentKey);
+                        }
+
+                        if (contentKey.indexOf("spacing") == 0) {
+                            spacing = contents.getJSONObject(contentKey);
+                        }
+
+                        if (contentKey.indexOf("fontFormat") == 0) {
+                            fontFormat = contents.getJSONObject(contentKey);
+                        }
+                        if (contentKey.indexOf("spaceXY") == 0) {
+                            spaceXY = contents.getJSONObject(contentKey);
+
+                        }
+                    }
+
+
+                    // 设置字行间距
+                    if (i == 0) {
+                        System.out.println(spaceXY.optInt("spaceX"));
+                        format.setXSpace(spaceXY.optInt("spaceX"));
+                        format.setYSpace(spaceXY.optInt("spaceY"));
+
+                        JSONObject hzFormat = fontFormat.getJSONObject("hzFormat");
+                        JSONObject ascFormat = fontFormat.getJSONObject("ascFormat");
+
+                        HzFormat(hzFormat.optString("hzScale"), hzFormat.optString("hzSize"), format, printer);
+                        AscFormat(ascFormat.optString("ascScale"), ascFormat.optString("ascSize"), format, printer);
+                    }
 
 // 一列
-                if (params.length() == 1) {
+                    if (params.length() == 1) {
 
 
-                    // Printing center
-                    if (spacing.optString("spacing1").equals("center")) {
-                        printer.printText(Printer.Alignment.CENTER, params.optString("param1") + "\n");
-                    }
-                    // Printing left
-                    if (spacing.optString("spacing1").equals("left")) {
-                        printer.printText(Printer.Alignment.LEFT, params.optString("param1") + "\n");
-                    }
-                    // Printing right
-                    if (spacing.optString("spacing1").equals("right")) {
-                        printer.printText(Printer.Alignment.RIGHT, params.optString("param1") + "\n");
-                    }
+                        // Printing center
+                        if (spacing.optString("spacing1").equals("center")) {
+                            printer.printText(Printer.Alignment.CENTER, params.optString("param1") + "\n");
+                        }
+                        // Printing left
+                        if (spacing.optString("spacing1").equals("left")) {
+                            printer.printText(Printer.Alignment.LEFT, params.optString("param1") + "\n");
+                        }
+                        // Printing right
+                        if (spacing.optString("spacing1").equals("right")) {
+                            printer.printText(Printer.Alignment.RIGHT, params.optString("param1") + "\n");
+                        }
 
 
 
@@ -356,46 +391,52 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
                             params.optString("param1"),
                             params.optString("param2")) + "\n");*/
 
-                }
-
-
-                // 两列
-                if (params.length() == 2) {
-                    printer.printText(String.format("" +
-                                    "%" + spacing.optString("spacing1") + "s" +
-                                    "%" + spacing.optString("spacing2") + "s",
-                            params.optString("param1"),
-                            params.optString("param2")) + "\n");
-                }
-// 三列
-                if (params.length() == 3) {
-                    System.out.println("param1-----" + params.get("param1"));
-
-
-                    if (!(params.get("param1") instanceof String)) {
-                        JSONObject itemName = params.getJSONObject("param1");
-                        printer.printText(Alignment.LEFT, itemName.optString("param1") + "\n");
-                        printer.printText(String.format("" +
-                                        "%" + spacing.optString("spacing1") + "s" +
-                                        "%" + spacing.optString("spacing2") + "s" +
-                                        "%" + spacing.optString("spacing3") + "s",
-                                itemName.optString("param2"),
-                                params.optString("param2"),
-                                params.optString("param3")) + "\n");
-
-                    } else {
-                        printer.printText(String.format("" +
-                                        "%" + spacing.optString("spacing1") + "s" +
-                                        "%" + spacing.optString("spacing2") + "s" +
-                                        "%" + spacing.optString("spacing3") + "s",
-                                params.optString("param1"),
-                                params.optString("param2"),
-                                params.optString("param3")) + "\n");
                     }
 
-                }
 
+                    // 两列
+                    if (params.length() == 2) {
+                        printer.printText(String.format("" +
+                                        "%" + spacing.optString("spacing1") + "s" +
+                                        "%" + spacing.optString("spacing2") + "s",
+                                params.optString("param1"),
+                                params.optString("param2")) + "\n");
+                    }
+// 三列
+                    if (params.length() == 3) {
+                        System.out.println("param1-----" + params.get("param1"));
+
+
+                        if (!(params.get("param1") instanceof String)) {
+                            JSONObject itemName = params.getJSONObject("param1");
+                            printer.printText(Alignment.LEFT, itemName.optString("param1") + "\n");
+                            printer.printText(String.format("" +
+                                            "%" + spacing.optString("spacing1") + "s" +
+                                            "%" + spacing.optString("spacing2") + "s" +
+                                            "%" + spacing.optString("spacing3") + "s",
+                                    itemName.optString("param2"),
+                                    params.optString("param2"),
+                                    params.optString("param3")) + "\n");
+
+                        } else {
+                            printer.printText(String.format("" +
+                                            "%" + spacing.optString("spacing1") + "s" +
+                                            "%" + spacing.optString("spacing2") + "s" +
+                                            "%" + spacing.optString("spacing3") + "s",
+                                    params.optString("param1"),
+                                    params.optString("param2"),
+                                    params.optString("param3")) + "\n");
+                        }
+
+                    }
+
+
+//                    printContent(contentParams, contentSpacing, spaceXY, contentFontFormat, format);
+
+
+                }
                 generalFormat(format, printer);
+
             }
         });
 
