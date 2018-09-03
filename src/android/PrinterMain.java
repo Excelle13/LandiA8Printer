@@ -101,8 +101,8 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
 //      printImg("mixc.bmp", 0, context, callbackContext);
 //      printQRcode("hello", 0, 300);
 //    Format format = new Format();
-//    printiCutLine("", 2, format);
-//    printiSplitLine("", 0, format);
+//    printCutLine("", 2, format);
+//    printSplitLine("", 0, format);
 
 //    printTxt();
 
@@ -208,12 +208,12 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
 
             // If there are split lines in the parameter, increase the steps of print segmentation.
             if (key.indexOf("splitLine") == 0) {
-                printiSplitLine("", 0, format);                     // print splitLine
+                printSplitLine("", 0, format);                     // print splitLine
             }
 
             // If there are cut lines in the parameter, increase the steps of print segmentation.
             if (key.indexOf("cutLine") == 0) {
-                printiCutLine("", 3, format);                       // print cutLine
+                printCutLine("", 3, format);                       // print cutLine
             }
 
             //content
@@ -536,7 +536,6 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
         return true;
     }
 
-
     // Print img
     public boolean printImg(String imgSrc, int offset, Context context, CallbackContext callbackContext) {
         if (stepList == null) {
@@ -559,7 +558,7 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
     }
 
     // Print cutLine
-    public boolean printiCutLine(String style, int feedLine, Format format) {
+    public boolean printCutLine(String style, int feedLine, Format format) {
         if (stepList == null) {
             return false;
         }
@@ -577,7 +576,7 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
 
 
     // Print splitLine
-    public boolean printiSplitLine(String style, int feedLine, Format format) {
+    public boolean printSplitLine(String style, int feedLine, Format format) {
         if (stepList == null) {
             return false;
         }
