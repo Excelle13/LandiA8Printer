@@ -3,12 +3,10 @@ package com.ttebd.a8Printer;
 import android.content.Context;
 import android.util.Log;
 
-import com.landicorp.android.eptapi.device.Beeper;
 import com.landicorp.android.eptapi.device.Printer;
+import com.landicorp.android.eptapi.device.Printer.Alignment;
 import com.landicorp.android.eptapi.device.Printer.Format;
 import com.landicorp.android.eptapi.exception.RequestException;
-import com.landicorp.android.eptapi.device.Printer.Alignment;
-
 import com.landicorp.android.eptapi.utils.QrCode;
 
 import org.apache.cordova.CallbackContext;
@@ -218,10 +216,10 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
 
             //content
             if (key.indexOf("content") == 0) {
-                JSONObject contentParams = null;
-                JSONObject contentSpacing = null;
-                JSONObject contentFontFormat = null;
-                JSONObject spaceXY = null;
+//                JSONObject contentParams = null;
+//                JSONObject contentSpacing = null;
+//                JSONObject contentFontFormat = null;
+//                JSONObject spaceXY = null;
 
 
                 JSONArray contentArray = obj.getJSONArray(key);
@@ -327,6 +325,13 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
                 JSONObject fontFormat = null;
                 JSONObject spaceXY = null;
 
+                System.out.println("getXSpace="+format.getXSpace());
+                System.out.println("getYSpace="+format.getYSpace());
+                System.out.println("getAscScale="+format.getAscScale());
+                System.out.println("getAscSize="+format.getAscSize());
+                System.out.println("getHzScale="+format.getHzScale());
+                System.out.println("getHzSize="+format.getHzSize());
+
                 for (int i = 0; i < contentArray.length(); i++) {
 
                     JSONObject contents = contentArray.getJSONObject(i);
@@ -352,19 +357,37 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
                         }
                     }
 
-
-                    // 设置字行间距
-                    if (i == 0) {
-                        System.out.println(spaceXY.optInt("spaceX"));
+                    // 行间距设置
+                    if (format.getXSpace() != spaceXY.optInt("spaceX")) {
                         format.setXSpace(spaceXY.optInt("spaceX"));
-                        format.setYSpace(spaceXY.optInt("spaceY"));
-
-                        JSONObject hzFormat = fontFormat.getJSONObject("hzFormat");
-                        JSONObject ascFormat = fontFormat.getJSONObject("ascFormat");
-
-                        HzFormat(hzFormat.optString("hzScale"), hzFormat.optString("hzSize"), format, printer);
-                        AscFormat(ascFormat.optString("ascScale"), ascFormat.optString("ascSize"), format, printer);
                     }
+                    if (format.getXSpace() != spaceXY.optInt("spaceY")) {
+                        format.setYSpace(spaceXY.optInt("spaceY"));
+                    }
+                    JSONObject hzFormat = fontFormat.getJSONObject("hzFormat");
+                    JSONObject ascFormat = fontFormat.getJSONObject("ascFormat");
+
+
+                    // 汉字大小
+                    if (!format.getHzSize().equals(hzFormat.optString("hzSize"))) {
+                        HzSizeFormat(hzFormat.optString("hzSize"), format);
+                    }
+                    if (!format.getHzScale().equals(hzFormat.optString("hzScale"))) {
+                        HzScaleFormat(hzFormat.optString("hzScale"), format);
+                    }
+
+
+                    // ASC大小
+                    if (!format.getAscSize().equals(ascFormat.optString("ascSize"))) {
+                        AscSizeFormat(ascFormat.optString("ascSize"), format);
+                    }
+                    if (!format.getAscScale().equals(ascFormat.optString("ascScale"))) {
+                        AscScaleFormat(ascFormat.optString("ascScale"), format);
+                    }
+
+                    printer.setFormat(format);
+
+
 
 // 一列
                     if (params.length() == 1) {
@@ -382,14 +405,6 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
                         if (spacing.optString("spacing1").equals("right")) {
                             printer.printText(Printer.Alignment.RIGHT, params.optString("param1") + "\n");
                         }
-
-
-
-    /*                printer.printText(String.format("" +
-                                    "%" + spacing.optString("spacing1") + "s" +
-                                    "%" + spacing.optString("spacing2") + "s",
-                            params.optString("param1"),
-                            params.optString("param2")) + "\n");*/
 
                     }
 
@@ -430,11 +445,13 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
 
                     }
 
-
-//                    printContent(contentParams, contentSpacing, spaceXY, contentFontFormat, format);
-
-
                 }
+
+
+
+
+                // 设置字行间距
+
                 generalFormat(format, printer);
 
             }
@@ -470,13 +487,52 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
 //        printer.setFormat(format);
 
                 // 设置字行间距
-                format.setXSpace(spaceXY.optInt("spaceX"));
-                format.setYSpace(spaceXY.optInt("spaceY"));
+//                format.getAscScale();
+
+//                generalFormat(format, printer);
+//                System.out.println("getXSpace="+format.getXSpace());
+//                System.out.println("getYSpace="+format.getYSpace());
+//                System.out.println("getAscScale="+format.getAscScale());
+//                System.out.println("getAscSize="+format.getAscSize());
+//                System.out.println("getHzScale="+format.getHzScale());
+//                System.out.println("getHzSize="+format.getHzSize());
+//                System.out.println("getYSpace="+format.geta());
+
+//                format.setXSpace(spaceXY.optInt("spaceX"));
+//                format.setYSpace(spaceXY.optInt("spaceY"));
                 JSONObject hzFormat = fontFormat.getJSONObject("hzFormat");
                 JSONObject ascFormat = fontFormat.getJSONObject("ascFormat");
 
-                HzFormat(hzFormat.optString("hzScale"), hzFormat.optString("hzSize"), format, printer);
-                AscFormat(ascFormat.optString("ascScale"), ascFormat.optString("ascSize"), format, printer);
+                // 行间距设置
+                if (format.getXSpace() != spaceXY.optInt("spaceX")) {
+                    format.setXSpace(spaceXY.optInt("spaceX"));
+                }
+                if (format.getXSpace() != spaceXY.optInt("spaceY")) {
+                    format.setYSpace(spaceXY.optInt("spaceY"));
+                }
+
+                // 汉字大小
+                if (!format.getHzSize().equals(hzFormat.optString("hzSize"))) {
+                    HzSizeFormat(hzFormat.optString("hzSize"), format);
+                }
+                if (!format.getHzScale().equals(hzFormat.optString("hzScale"))) {
+                    HzScaleFormat(hzFormat.optString("hzScale"), format);
+                }
+
+
+                // ASC大小
+                if (!format.getAscSize().equals(ascFormat.optString("ascSize"))) {
+                    AscSizeFormat(ascFormat.optString("ascSize"), format);
+                }
+                if (!format.getAscScale().equals(ascFormat.optString("ascScale"))) {
+                    AscScaleFormat(ascFormat.optString("ascScale"), format);
+                }
+
+                printer.setFormat(format);
+
+
+//                HzFormat(hzFormat.optString("hzScale"), hzFormat.optString("hzSize"), format, printer);
+//                AscFormat(ascFormat.optString("ascScale"), ascFormat.optString("ascSize"), format, printer);
 
                 // Printing center
                 if (alignment.equals("center")) {
@@ -633,8 +689,8 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
 
     // 正常字体格式化
     public void generalFormat(Format format, Printer printer) {
-        format.setYSpace(0);
-        format.setXSpace(0);
+        format.setYSpace(1);
+        format.setXSpace(10);
         format.setAscScale(Format.ASC_SC1x1);
         format.setAscSize(Format.ASC_DOT24x12);
         format.setHzScale(Format.HZ_SC1x1);
@@ -663,8 +719,32 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
         }
     }
 
-    // chinese format
-    public void HzFormat(String hzScale, String hzSize, Format format, Printer printer) throws Exception {
+    // chinese Size format
+    public void HzSizeFormat(String hzSize, Format format) {
+
+
+        switch (hzSize) {
+            case "DOT16x16":
+                format.setHzSize(Format.HzSize.DOT16x16);
+                break;
+            case "DOT24x16":
+                format.setHzSize(Format.HzSize.DOT24x16);
+                break;
+            case "DOT24x24":
+                format.setHzSize(Format.HzSize.DOT24x24);
+                break;
+            case "DOT32x24":
+                format.setHzSize(Format.HzSize.DOT32x24);
+                break;
+            default:
+                format.setHzSize(Format.HzSize.DOT24x24);
+        }
+
+
+    }
+
+    // chinese Asc format
+    public void HzScaleFormat(String hzScale, Format format) {
         switch (hzScale) {
             case "SC1x1":
                 format.setHzScale(Format.HzScale.SC1x1);
@@ -697,30 +777,40 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
                 format.setHzScale(Format.HzScale.SC1x1);
         }
 
-        switch (hzSize) {
-            case "DOT16x16":
-                format.setHzSize(Format.HzSize.DOT16x16);
-                break;
-            case "DOT24x16":
-                format.setHzSize(Format.HzSize.DOT24x16);
-                break;
-            case "DOT24x24":
-                format.setHzSize(Format.HzSize.DOT24x24);
-                break;
-            case "DOT32x24":
-                format.setHzSize(Format.HzSize.DOT32x24);
-                break;
-            default:
-                format.setHzSize(Format.HzSize.DOT24x24);
-        }
-
-        printer.setFormat(format);
-
 
     }
 
-    // ASC format
-    public void AscFormat(String ascScale, String ascSize, Format format, Printer printer) throws Exception {
+    // ASC size format
+    public void AscSizeFormat(String ascSize, Format format) {
+        switch (ascSize) {
+            case "DOT16x8":
+                format.setAscSize(Format.AscSize.DOT16x8);
+                break;
+            case "DOT24x12":
+                format.setAscSize(Format.AscSize.DOT24x12);
+                break;
+            case "DOT24x8":
+                format.setAscSize(Format.AscSize.DOT24x8);
+                break;
+            case "DOT32x12":
+                format.setAscSize(Format.AscSize.DOT32x12);
+                break;
+            case "DOT5x7":
+                format.setAscSize(Format.AscSize.DOT5x7);
+                break;
+            case "DOT7x7":
+                format.setAscSize(Format.AscSize.DOT7x7);
+                break;
+            default:
+                format.setAscSize(Format.AscSize.DOT24x12);
+        }
+
+//        printer.setFormat(format);
+
+    }
+
+    // ASC Scale format
+    public void AscScaleFormat(String ascScale, Format format) {
         switch (ascScale) {
             case "SC1x1":
                 format.setAscScale(Format.AscScale.SC1x1);
@@ -756,32 +846,15 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
                 format.setAscScale(Format.AscScale.SC1x1);
         }
 
-
-        switch (ascSize) {
-            case "DOT16x8":
-                format.setAscSize(Format.AscSize.DOT16x8);
-                break;
-            case "DOT24x12":
-                format.setAscSize(Format.AscSize.DOT24x12);
-                break;
-            case "DOT24x8":
-                format.setAscSize(Format.AscSize.DOT24x8);
-                break;
-            case "DOT32x12":
-                format.setAscSize(Format.AscSize.DOT32x12);
-                break;
-            case "DOT5x7":
-                format.setAscSize(Format.AscSize.DOT5x7);
-                break;
-            case "DOT7x7":
-                format.setAscSize(Format.AscSize.DOT7x7);
-                break;
-            default:
-                format.setAscSize(Format.AscSize.DOT24x12);
-        }
-
-        printer.setFormat(format);
-
     }
 
+
+    /**
+     * 格式处理，过滤重复的格式，减少命令的消耗，增长打印长度
+     */
+
+//    public void formatContentParams(JSONArray contentArray, Format format, Printer printer) throws JSONException {
+//
+//
+//    }
 }
