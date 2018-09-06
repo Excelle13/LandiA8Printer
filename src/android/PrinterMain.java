@@ -489,7 +489,7 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
                 // 设置字行间距
 //                format.getAscScale();
 
-//                generalFormat(format, printer);
+                generalFormat(format, printer);
 //                System.out.println("getXSpace="+format.getXSpace());
 //                System.out.println("getYSpace="+format.getYSpace());
 //                System.out.println("getAscScale="+format.getAscScale());
