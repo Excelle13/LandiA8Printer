@@ -597,10 +597,14 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
             public void doPrint(Printer printer) throws Exception {
                 InputStream in = null;
                 try {
-                    in = context.getResources().getAssets().open(imgSrc);
+//                    in = context.getResources().getAssets().open(imgSrc);
+                    File file = new File(Environment.getExternalStorageDirectory(),
+                            imgSrc);
+                    in = new FileInputStream(file);
                     printer.printImage(offset, in);
                 } catch (Exception e) {
-                    callbackContext.error("打印图片异常");
+//                    callbackContext.error("打印图片异常");
+                    Log.e("打印图片异常", e.getMessage());
                     e.printStackTrace();
                 }
             }
