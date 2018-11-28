@@ -125,7 +125,7 @@ public class PrinterMain extends com.ttebd.a8Printer.DeviceBase {
             try {
                 // 开始打印
 //                Beeper.startBeep(50);
-                progress.execute();
+                progress.start();
             } catch (RequestException e) {
                 Log.e("printer", "printer failed");
                 unbindDeviceService();
