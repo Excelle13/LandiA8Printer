@@ -1,6 +1,7 @@
 package com.ttebd.a8Printer;
 
 import android.content.Context;
+import android.os.Environment;
 import android.util.Log;
 
 import com.landicorp.android.eptapi.device.Printer;
@@ -14,6 +15,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
